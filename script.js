@@ -109,15 +109,28 @@
     let noClicks = 0;
 
     function moveNoButton() {
-        const dx = (Math.random() - 0.5) * 120;
-        const dy = (Math.random() - 0.5) * 80;
-        let left = btnNo.offsetLeft + dx;
-        let top = btnNo.offsetTop + dy;
-        left = Math.max(0, Math.min(left, 180));
-        top = Math.max(0, Math.min(top, 80));
-        btnNo.style.position = 'relative';
-        btnNo.style.left = left + 'px';
-        btnNo.style.top = top + 'px';
+        const container = btnNo.parentElement;
+        const rect = container.getBoundingClientRect();
+        const btnRect = btnNo.getBoundingClientRect();
+        
+        // Получаем текущие координаты
+        let left = btnNo.offsetLeft || 0;
+        let top = btnNo.offsetTop || 0;
+        
+        // Случайное смещение в пределах контейнера
+        const maxX = container.offsetWidth - btnNo.offsetWidth - 10;
+        const maxY = container.offsetHeight - btnNo.offsetHeight - 10;
+        
+        let newLeft = Math.random() * maxX;
+        let newTop = Math.random() * maxY;
+        
+        // Ограничиваем движение
+        newLeft = Math.max(0, Math.min(newLeft, maxX));
+        newTop = Math.max(0, Math.min(newTop, maxY));
+        
+        btnNo.style.left = newLeft + 'px';
+        btnNo.style.top = newTop + 'px';
+        
         const msgs = ['Ты уверен? 😅', 'Подумай ещё 🤭', 'А может да? ☺️', 'Не убегай! 😄', 'Я настаиваю ✨'];
         noMsg.textContent = msgs[noClicks % msgs.length];
         noClicks++;
@@ -134,7 +147,7 @@
 
     btnYes.addEventListener('click', function() {
         showScreen('datetime');
-        btnNo.style.position = 'static';
+        btnNo.style.position = 'absolute';
         btnNo.style.left = '0';
         btnNo.style.top = '0';
         noMsg.textContent = '';
@@ -402,7 +415,7 @@
         datePicker.value = today;
         timePicker.value = '18:30';
         updateDateTimeDisplay();
-        btnNo.style.position = 'static';
+        btnNo.style.position = 'absolute';
         btnNo.style.left = '0';
         btnNo.style.top = '0';
         noMsg.textContent = '';
