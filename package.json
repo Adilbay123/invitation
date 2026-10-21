@@ -1,0 +1,12 @@
+{
+  "name": "invitation",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Романтичное приглашение с ответом в Telegram, админкой и статистикой",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

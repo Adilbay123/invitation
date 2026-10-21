@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Особое приглашение 💌</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-screen" id="app">
+
+        <!-- Кнопка музыки -->
+        <button class="music-btn" id="musicBtn" aria-label="Включить музыку">🔇</button>
+
+        <!-- ЭКРАН 1: Заставка -->
+        <div class="screen active" id="screen-splash">
+             <div class="splash-inner">
+                <div class="splash-dot"></div>
+                <h2 class="splash-sub">У тебя</h2>
+                <h1 class="splash-title">новое сообщение</h1>
+                <button class="envelope-icon" id="splashEnvelope" aria-label="Открыть сообщение">📩</button>
+                <p class="splash-hint">Нажми на конверт</p>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 2: Конверт -->
+        <div class="screen" id="screen-envelope">
+            <div class="envelope-wrap">
+                <div class="envelope-3d" id="envelope3d" role="button" tabindex="0" aria-label="Открыть конверт">
+                    <span class="for-you">Для тебя</span>
+                    <span class="seal">✦</span>
+                </div>
+            </div>
+            <p class="splash-hint">нажми, чтобы открыть</p>
+        </div>
+
+        <!-- ЭКРАН 3: Письмо -->
+        <div class="screen" id="screen-letter">
+            <div class="letter-paper">
+                <div class="letter-greeting" id="letterGreeting">😊 Привет</div>
+                <div class="letter-text">Есть предложение...</div>
+                <div class="letter-question">Пойдём погуляем?</div>
+                <div class="date-block">📅 Когда тебе удобно?</div>
+                <div class="btn-group">
+                    <button class="btn-yes" id="btnYes">❤️ Да, конечно</button>
+                    <div class="no-button-area">
+                        <button class="btn-no" id="btnNo">😄 Нет</button>
+                    </div>
+                </div>
+                <div id="noMessage" class="no-message" aria-live="polite"></div>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 4: Дата и время -->
+        <div class="screen" id="screen-datetime">
+            <div class="screen-head">
+                <div class="emoji-big">🎉</div>
+                <h2 class="screen-title">Отлично!</h2>
+                <p class="screen-sub">Теперь выберем план</p>
+            </div>
+            <div class="card-select">
+                <div class="card-row">
+                    <span>📅 Дата встречи</span>
+                    <span class="pill" id="selectedDateDisplay">—</span>
+                </div>
+                <div class="datetime-grid">
+                    <input type="date" id="datePicker" aria-label="Дата">
+                    <input type="time" id="timePicker" value="18:30" step="300" aria-label="Время">
+                </div>
+                <button id="nextToPlaces" class="btn-primary">Выбрать место →</button>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 5: Места -->
+        <div class="screen" id="screen-places">
+            <h3 class="screen-title-sm">📍 Выбери место</h3>
+            <div id="placesContainer" class="places-container"></div>
+            <button id="finalizeBtn" class="btn-success">Готово! 🎉</button>
+        </div>
+
+        <!-- ЭКРАН 6: Финал -->
+        <div class="screen" id="screen-final">
+            <div class="final-inner">
+                <div class="emoji-big">🎉</div>
+                <h1 class="final-title">Готово!</h1>
+                <div class="final-card">
+                    <p>📅 <span id="finalDate">—</span></p>
+                    <p>🕒 <span id="finalTime">—</span></p>
+                    <p>📍 <span id="finalPlace">—</span></p>
+                </div>
+                <div class="countdown" id="countdown"></div>
+
+                <p class="send-status" id="sendStatus" aria-live="polite"></p>
+                <button id="retryBtn" class="btn-ghost" hidden>↻ Повторить отправку</button>
+
+                <div class="note-block">
+                    <label for="noteInput" class="note-label">💬 Записка для <span id="noteToName">отправителя</span></label>
+                    <textarea id="noteInput" class="note-input" maxlength="200" placeholder="Напиши что-нибудь тёплое..."></textarea>
+                    <button id="noteBtn" class="btn-primary note-btn" disabled>Отправить записку</button>
+                </div>
+
+                <div class="final-actions">
+                    <button id="shareBtn" class="btn-ghost">📤 Поделиться</button>
+                    <button id="resetBtn" class="btn-ghost" hidden>↻ Заново</button>
+                </div>
+                <div class="final-hearts">
+                    <span>❤️</span><span>💛</span><span>💙</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ЭКРАН: Ошибка -->
+        <div class="screen" id="screen-error">
+            <div class="final-inner">
+                <div class="emoji-big">🔒</div>
+                <h1 class="final-title" id="errTitle">Ссылка не работает</h1>
+                <p class="screen-sub" id="errText">Попроси отправителя создать новую.</p>
+            </div>
+        </div>
+
+        <!-- TOAST -->
+        <div class="toast-box" id="toastBox"></div>
+
+        <!-- КОНФЕТТИ -->
+        <div class="confetti-box" id="confettiBox"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
