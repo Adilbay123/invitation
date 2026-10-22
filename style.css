@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 /* ===== БАЗА ===== */
+=======
+/* ===== ГЛОБАЛЬНЫЕ СТИЛИ ===== */
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+<<<<<<< HEAD
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -33,10 +38,17 @@ html, body {
 
 body {
     background: radial-gradient(1200px 800px at 50% -10%, #1a2355 0%, var(--bg-0) 60%);
+=======
+}
+
+body {
+    background: #0b0e2a;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+<<<<<<< HEAD
     min-height: 100dvh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     color: var(--text);
@@ -46,10 +58,25 @@ body {
 }
 
 /* ===== КОРПУС ===== */
+=======
+    font-family: 'Segoe UI', -apple-system, system-ui, sans-serif;
+    padding: 8px;
+    margin: 0;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.heart-cursor {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23ff4d6d" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') 12 12, auto;
+}
+
+/* ===== ОСНОВНОЙ ЭКРАН ===== */
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 .app-screen {
     position: relative;
     width: 100%;
     max-width: 400px;
+<<<<<<< HEAD
     height: 95vh;
     height: 95dvh;
     max-height: 780px;
@@ -59,11 +86,21 @@ body {
     border: 1px solid var(--line);
     box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     padding: 22px 18px;
+=======
+    min-height: 640px;
+    height: 95vh;
+    max-height: 780px;
+    background: linear-gradient(165deg, #12163a 0%, #1a2355 50%, #0f1a3a 100%);
+    border-radius: 48px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 0 100px rgba(70, 130, 255, 0.06);
+    padding: 18px 16px 20px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+<<<<<<< HEAD
     isolation: isolate;
 }
 
@@ -98,6 +135,34 @@ body {
     color: var(--accent);
     border-color: var(--accent-soft);
     background: var(--accent-soft);
+=======
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ===== ЗВЁЗДЫ ===== */
+.stars-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--duration, 6s) ease-in-out infinite alternate;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.2; transform: scale(0.6); }
+    100% { opacity: 1; transform: scale(1.2); }
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 /* ===== ЭКРАНЫ ===== */
@@ -108,6 +173,7 @@ body {
     justify-content: center;
     width: 100%;
     height: 100%;
+<<<<<<< HEAD
     position: absolute;
     inset: 0;
     padding: 24px 18px;
@@ -117,10 +183,17 @@ body {
     pointer-events: none;
     z-index: 1;
     overflow-y: auto;
+=======
+    position: relative;
+    z-index: 2;
+    padding: 8px 0;
+    animation: fadeUp 0.45s ease-out;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 .screen.active {
     display: flex;
+<<<<<<< HEAD
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
@@ -179,10 +252,28 @@ body {
     color: var(--text-dim);
     letter-spacing: 0.5px;
     margin-top: 6px;
+=======
+}
+
+@keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(22px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== ТЕКСТ ===== */
+.gradient-text {
+    background: linear-gradient(135deg, #ff6b9d, #ffb347, #6aaaff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 1px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 /* ===== КОНВЕРТ ===== */
 .envelope-icon {
+<<<<<<< HEAD
     font-size: 64px;
     margin: 24px 0 12px;
     cursor: pointer;
@@ -222,24 +313,72 @@ body {
     box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
     overflow: hidden;
+=======
+    font-size: 72px;
+    margin: 12px 0;
+    animation: float 3s ease-in-out infinite;
+    cursor: pointer;
+    transition: transform 0.2s;
+    filter: drop-shadow(0 8px 20px rgba(255, 100, 150, 0.3));
+}
+
+.envelope-icon:active {
+    transform: scale(0.85);
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+/* ===== КОНВЕРТ 3D ===== */
+.envelope-3d {
+    width: 180px;
+    height: 120px;
+    background: linear-gradient(145deg, #ff6b8a, #d43f6b);
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 16px 40px rgba(255, 70, 120, 0.4), inset 0 -4px 0 rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin: 8px 0;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 .envelope-3d::before {
     content: '';
     position: absolute;
+<<<<<<< HEAD
     inset: 0;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%);
+=======
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 50%);
+    border-radius: 8px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     pointer-events: none;
 }
 
 .envelope-3d::after {
     content: '';
     position: absolute;
+<<<<<<< HEAD
     top: 0;
+=======
+    top: -1px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     left: 50%;
     transform: translateX(-50%);
     width: 0;
     height: 0;
+<<<<<<< HEAD
     border-left: 85px solid transparent;
     border-right: 85px solid transparent;
     border-top: 48px solid rgba(124, 147, 255, 0.18);
@@ -260,18 +399,44 @@ body {
     font-weight: 500;
     font-size: 15px;
     letter-spacing: 1.5px;
+=======
+    border-left: 90px solid transparent;
+    border-right: 90px solid transparent;
+    border-top: 50px solid #ff8aa8;
+    filter: drop-shadow(0 -4px 8px rgba(255,100,150,0.3));
+}
+
+.envelope-3d .for-you {
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     z-index: 1;
 }
 
 .envelope-3d .seal {
+<<<<<<< HEAD
     color: var(--accent);
     font-size: 20px;
     z-index: 1;
     text-shadow: 0 0 20px var(--accent);
+=======
+    color: #ffd700;
+    font-size: 26px;
+    z-index: 1;
+    text-shadow: 0 0 20px rgba(255,215,0,0.5);
+}
+
+.envelope-3d:active {
+    transform: scale(0.92) rotateY(8deg);
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 /* ===== ПИСЬМО ===== */
 .letter-paper {
+<<<<<<< HEAD
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
@@ -316,26 +481,65 @@ body {
     margin-bottom: 8px;
 }
 
+=======
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 32px;
+    padding: 28px 22px;
+    width: 100%;
+    max-width: 320px;
+    color: white;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    line-height: 1.6;
+}
+
+.letter-paper div {
+    margin: 4px 0;
+}
+
+.date-block {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 40px;
+    padding: 6px 16px;
+    display: inline-block;
+    margin: 6px 0;
+    font-size: 15px;
+}
+
+/* ===== КНОПКИ ===== */
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 .btn-group {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+<<<<<<< HEAD
     align-items: center;
     gap: 12px;
     margin-top: 10px;
+=======
+    gap: 12px;
+    margin-top: 12px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     width: 100%;
 }
 
 .no-button-area {
     position: relative;
     width: 120px;
+<<<<<<< HEAD
     height: 76px;
+=======
+    height: 80px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .btn-yes, .btn-no {
+<<<<<<< HEAD
     padding: 12px 26px;
     border: none;
     border-radius: 40px;
@@ -437,16 +641,119 @@ body {
     font-size: 12px;
     font-weight: 500;
     border: 1px solid rgba(124, 147, 255, 0.2);
+=======
+    padding: 12px 28px;
+    border: none;
+    border-radius: 60px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+
+.btn-yes {
+    background: linear-gradient(135deg, #4dff91, #2ecc71);
+    color: #0b0e2a;
+    box-shadow: 0 8px 24px rgba(77, 255, 145, 0.3);
+}
+
+.btn-yes:active {
+    transform: scale(0.92);
+}
+
+.btn-no {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffb0b0;
+    border: 1px solid rgba(255, 100, 100, 0.2);
+    position: absolute;
+    transition: left 0.15s ease, top 0.15s ease;
+}
+
+.btn-no:active {
+    transform: scale(0.92);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3d92ff, #6aaaff);
+    border: none;
+    padding: 14px 28px;
+    border-radius: 60px;
+    color: white;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.btn-primary:active {
+    transform: scale(0.96);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #4dff91, #2ecc71);
+    border: none;
+    padding: 14px 28px;
+    border-radius: 60px;
+    color: #0b0e2a;
+    font-weight: 700;
+    width: 100%;
+    max-width: 280px;
+    margin: 6px 0 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.btn-success:active {
+    transform: scale(0.96);
+}
+
+.btn-reset {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 24px;
+    border-radius: 60px;
+    color: #b0caff;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+}
+
+.btn-reset:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ===== КАРТОЧКА ВЫБОРА ===== */
+.card-select {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 28px;
+    padding: 20px 18px;
+    width: 100%;
+    max-width: 320px;
+    color: white;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 .datetime-grid {
     display: flex;
+<<<<<<< HEAD
     gap: 10px;
     margin: 10px 0 14px;
+=======
+    gap: 12px;
+    margin: 8px 0;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 .datetime-grid input {
     flex: 1;
+<<<<<<< HEAD
     padding: 12px 14px;
     border-radius: 40px;
     border: 1px solid var(--line);
@@ -536,11 +843,36 @@ body {
 }
 
 /* ===== СПИСОК МЕСТ ===== */
+=======
+    padding: 12px 10px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    font-size: 15px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.datetime-grid input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.datetime-grid input:focus {
+    border-color: #6aaaff;
+    box-shadow: 0 0 20px rgba(106, 170, 255, 0.15);
+}
+
+/* ===== МЕСТА ===== */
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 .places-container {
     width: 100%;
     max-width: 320px;
     max-height: 380px;
     overflow-y: auto;
+<<<<<<< HEAD
     padding: 2px 0;
     display: flex;
     flex-direction: column;
@@ -557,18 +889,43 @@ body {
 
 .places-container::-webkit-scrollbar-thumb {
     background: var(--line-strong);
+=======
+    padding: 4px 0;
+}
+
+.places-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.places-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.places-container::-webkit-scrollbar-thumb {
+    background: rgba(106, 170, 255, 0.3);
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     border-radius: 10px;
 }
 
 .place-card {
+<<<<<<< HEAD
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     padding: 14px 16px;
+=======
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 14px 16px;
+    margin: 6px 0;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     display: flex;
     align-items: center;
     gap: 14px;
     cursor: pointer;
+<<<<<<< HEAD
     transition: all 0.3s var(--ease);
     color: var(--text);
     opacity: 0;
@@ -806,27 +1163,240 @@ body {
 
 @keyframes toastOut {
     to { opacity: 0; transform: translateY(8px); }
+=======
+    transition: all 0.2s;
+    color: white;
+}
+
+.place-card:active {
+    transform: scale(0.97);
+}
+
+.place-card.selected {
+    border-color: #4dff91;
+    background: rgba(77, 255, 145, 0.08);
+    box-shadow: 0 0 30px rgba(77, 255, 145, 0.05);
+}
+
+.place-card .photo-place {
+    font-size: 32px;
+    width: 48px;
+    text-align: center;
+}
+
+.place-card .place-photo-img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.place-card > div:last-child {
+    flex: 1;
+}
+
+.add-place-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 60px;
+    padding: 12px 20px;
+    color: #b0ccff;
+    text-align: center;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+    margin: 6px 0;
+    transition: all 0.2s;
+    font-size: 15px;
+}
+
+.add-place-btn:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== МОДАЛКА ===== */
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 48px;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal-box {
+    background: #1a2355;
+    border-radius: 32px;
+    padding: 28px 22px;
+    width: 90%;
+    max-width: 300px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    color: white;
+}
+
+.modal-box input {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 6px 0;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    font-size: 15px;
+    outline: none;
+}
+
+.modal-box input:focus {
+    border-color: #6aaaff;
+}
+
+.photo-upload {
+    margin: 8px 0;
+}
+
+.photo-label {
+    display: block;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 12px;
+    border-radius: 30px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    transition: all 0.2s;
+}
+
+.photo-label:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.photo-preview {
+    margin-top: 8px;
+    text-align: center;
+}
+
+.photo-preview img {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 16px;
+    border: 2px solid #6aaaff;
+}
+
+.btn-remove-photo {
+    display: block;
+    margin: 4px auto;
+    background: #ff4d6d;
+    border: none;
+    padding: 4px 16px;
+    border-radius: 20px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #3d92ff, #6aaaff);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 40px;
+    color: white;
+    font-weight: 600;
+    flex: 1;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 40px;
+    color: #b0caff;
+    cursor: pointer;
+}
+
+/* ===== ФИНАЛ ===== */
+.final-card {
+    background: rgba(27, 35, 85, 0.8);
+    border-radius: 40px;
+    padding: 18px;
+    margin: 12px 0;
+    border: 1px solid #6f8bdf;
+    width: 100%;
+    max-width: 280px;
+}
+
+.final-card p {
+    margin: 4px 0;
+    font-size: 16px;
+}
+
+.final-photo {
+    margin-top: 10px;
+}
+
+.final-photo img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 16px;
+    border: 2px solid #6aaaff;
+}
+
+.final-hearts {
+    font-size: 36px;
+    letter-spacing: 8px;
+    animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 /* ===== КОНФЕТТИ ===== */
 .confetti-box {
     position: absolute;
+<<<<<<< HEAD
     inset: 0;
     pointer-events: none;
     overflow: hidden;
     z-index: 50;
     border-radius: 36px;
+=======
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 50;
+    border-radius: 48px;
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 .confetti-piece {
     position: absolute;
     top: -20px;
+<<<<<<< HEAD
     border-radius: 2px;
+=======
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     animation: confettiFall linear forwards;
     opacity: 0.9;
 }
 
 @keyframes confettiFall {
+<<<<<<< HEAD
     0% {
         transform: translateY(0) rotate(0deg);
         opacity: 1;
@@ -835,12 +1405,17 @@ body {
         transform: translateY(780px) rotate(540deg);
         opacity: 0;
     }
+=======
+    0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translateY(800px) rotate(720deg) scale(0.3); opacity: 0; }
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 /* ===== АДАПТИВ ===== */
 @media (max-width: 420px) {
     .app-screen {
         border-radius: 28px;
+<<<<<<< HEAD
         padding: 18px 14px;
         height: 96vh;
         min-height: 560px;
@@ -848,21 +1423,62 @@ body {
     .splash-title { font-size: 24px; }
     .envelope-icon { font-size: 54px; }
     .envelope-3d { width: 150px; height: 100px; }
+=======
+        min-height: 580px;
+        height: 96vh;
+        padding: 12px 10px 16px;
+    }
+    .gradient-text {
+        font-size: 26px;
+    }
+    .envelope-icon {
+        font-size: 56px;
+    }
+    .envelope-3d {
+        width: 150px;
+        height: 100px;
+    }
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
     .envelope-3d::after {
         border-left-width: 75px;
         border-right-width: 75px;
         border-top-width: 40px;
     }
+<<<<<<< HEAD
     .letter-paper { padding: 24px 18px; }
     .datetime-grid { flex-direction: column; gap: 8px; }
     .btn-yes, .btn-no { padding: 11px 20px; font-size: 14px; }
     .no-button-area { width: 100px; height: 64px; }
     .final-title { font-size: 22px; }
+=======
+    .letter-paper {
+        padding: 20px 16px;
+    }
+    .datetime-grid {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .btn-yes, .btn-no {
+        padding: 10px 20px;
+        font-size: 15px;
+    }
+    .no-button-area {
+        width: 100px;
+        height: 60px;
+    }
+    .place-card {
+        padding: 10px 12px;
+    }
+    .modal-box {
+        padding: 20px 16px;
+    }
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
 }
 
 @media (max-width: 360px) {
     .app-screen {
         border-radius: 20px;
+<<<<<<< HEAD
         padding: 12px 10px;
         min-height: 520px;
     }
@@ -948,3 +1564,38 @@ textarea:focus-visible {
         transition-duration: 0.01ms !important;
     }
 }
+=======
+        min-height: 520px;
+        padding: 8px 6px 12px;
+    }
+    .gradient-text {
+        font-size: 22px;
+    }
+    .envelope-icon {
+        font-size: 44px;
+    }
+    .envelope-3d {
+        width: 120px;
+        height: 80px;
+    }
+    .envelope-3d::after {
+        border-left-width: 60px;
+        border-right-width: 60px;
+        border-top-width: 32px;
+    }
+    .letter-paper {
+        padding: 14px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Безопасная область для iPhone */
+@supports (padding: max(0px)) {
+    .app-screen {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-top: max(18px, env(safe-area-inset-top));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+}
+>>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262

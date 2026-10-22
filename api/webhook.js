@@ -190,3 +190,4 @@ function siteUrl() {
     if (!site) throw new Error('SITE_URL не задан');
     return site;
 }
+
