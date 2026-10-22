@@ -1,44 +1,47 @@
-// Клиент Upstash Redis REST API.
-// Команды уходят POST-запросом с JSON-массивом, поэтому длинные значения не упираются в лимит URL.
-// Документация: https://upstash.com/docs/redis/features/restapi
+// api/_redis.js
+const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-async function call(path, body) {
-    const base = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!base || !token) {
-        throw new Error('Redis не настроен: задайте UPSTASH_REDIS_REST_URL и UPSTASH_REDIS_REST_TOKEN');
-    }
+async function redisCommand(commandArgs) {
+  if (!UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Upstash Redis credentials are not configured');
+  }
 
-    const res = await fetch(base.replace(/\/+$/, '') + path, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    });
+  const response = await fetch(UPSTASH_REDIS_REST_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(commandArgs),
+  });
 
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data) {
-        throw new Error(`Redis ${res.status}: ${(data && data.error) || 'нет ответа'}`);
-    }
-    return data;
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`Redis error: ${data.error || response.statusText}`);
+  }
+  return data.result;
 }
 
-// redis('set', 'key', 'value', 'EX', 60)
-async function redis(...cmd) {
-    const data = await call('', cmd.map(String));
-    if (data.error) throw new Error('Redis: ' + data.error);
-    return data.result;
+async function redisPipeline(commands) {
+  if (!UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
+    throw new Error('Upstash Redis credentials are not configured');
+  }
+
+  const response = await fetch(`${UPSTASH_REDIS_REST_URL}/pipeline`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(commands),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`Redis pipeline error: ${data.error || response.statusText}`);
+  }
+  return data;
 }
 
-// pipeline([['incr','a'], ['get','b']]) → [результат1, результат2]
-async function pipeline(cmds) {
-    const data = await call('/pipeline', cmds.map((c) => c.map(String)));
-    return data.map((item) => {
-        if (item.error) throw new Error('Redis: ' + item.error);
-        return item.result;
-    });
-}
-
-module.exports = { redis, pipeline };
+module.exports = { redisCommand, redisPipeline };

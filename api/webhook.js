@@ -1,193 +1,253 @@
-// Вебхук Telegram-бота.
-// Каждый отправитель (Асан, Искен, ...) создаёт свои приглашения командой /new
-// и получает уведомления только о своих.
-
+// api/webhook.js
 const crypto = require('crypto');
-const { redis, pipeline } = require('./_redis');
-const U = require('./_util');
-
-const HELP =
-    `Я помогу отправить красивое приглашение погулять. ` +
-    `Когда человек ответит, уведомление придёт сюда.\n\n` +
-    `/new — создать приглашение\n` +
-    `/my — мои приглашения\n` +
-    `/myname Имя — как подписывать тебя в приглашении\n` +
-    `/cancel — отменить создание`;
-
-function safeEqual(a, b) {
-    const ha = crypto.createHash('sha256').update(String(a)).digest();
-    const hb = crypto.createHash('sha256').update(String(b)).digest();
-    return crypto.timingSafeEqual(ha, hb);
-}
+const { redisCommand, redisPipeline } = require('./_redis');
+const { timingSafeEqualStr, sendTelegramMessage, getLocalDateString, getTzOffset } = require('./_util');
 
 module.exports = async (req, res) => {
-    if (req.method !== 'POST') return res.status(200).send('OK');
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-    const secret = process.env.WEBHOOK_SECRET;
-    if (secret && !safeEqual(req.headers['x-telegram-bot-api-secret-token'] || '', secret)) {
-        return res.status(403).send('Forbidden');
-    }
+  // 1. Проверка секретного токена вебхука
+  const secretHeader = req.headers['x-telegram-bot-api-secret-token'];
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (webhookSecret && !timingSafeEqualStr(secretHeader, webhookSecret)) {
+    return res.status(200).json({ ok: true }); // Всегда отвечаем 200 по требованиям Telegram
+  }
 
-    try {
-        await handle(U.readBody(req));
-    } catch (err) {
-        console.error('Webhook error:', err);
+  try {
+    const update = req.body;
+    if (!update) return res.status(200).json({ ok: true });
+
+    // Обработка текстовых команд и сообщений
+    if (update.message) {
+      await handleMessage(update.message);
+    } 
+    // Обработка нажатий на inline-кнопки (выбор пола)
+    else if (update.callback_query) {
+      await handleCallbackQuery(update.callback_query);
     }
-    return res.status(200).send('OK'); // всегда 200, чтобы Telegram не слал повторы
+  } catch (err) {
+    console.error('Webhook error:', err);
+  }
+
+  return res.status(200).json({ ok: true });
 };
 
-async function handle(update) {
-    if (update.callback_query) return onCallback(update.callback_query);
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  let text = (msg.text || '').trim();
+  if (!text) return;
 
-    const msg = update.message;
-    if (!msg || !msg.text || !msg.chat || msg.chat.type !== 'private') return;
+  // Очистка от упоминания бота типа /command@BotName
+  text = text.replace(/@\w+/, '');
 
-    const chatId = msg.chat.id;
-    const text = msg.text.trim();
-    const cmd = text.match(/^\/([a-zA-Z_]+)(?:@\w+)?(?:\s+([\s\S]*))?$/);
+  // Получаем имя отправителя из Redis
+  let senderName = await redisCommand(['GET', `sender:name:${chatId}`]);
 
-    if (cmd) {
-        const name = cmd[1].toLowerCase();
-        const arg = (cmd[2] || '').trim();
-
-        if (name === 'start' || name === 'help') return onStart(msg);
-        if (name === 'new') return onNew(chatId);
-        if (name === 'my') return onMy(chatId);
-        if (name === 'myname') return onMyName(chatId, arg);
-        if (name === 'cancel') {
-            await redis('del', `state:${chatId}`);
-            return U.sendMessage(chatId, 'Отменено. Чтобы начать заново, напиши /new');
-        }
-        return; // неизвестные команды игнорируем
-    }
-
-    // Обычный текст — возможно, это ответ на вопрос «как зовут?»
-    const raw = await redis('get', `state:${chatId}`);
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    if (state.step !== 'name') return;
-
-    const toName = text.replace(/\s+/g, ' ');
-    if (toName.length < 1 || toName.length > 30) {
-        return U.sendMessage(chatId, 'Имя должно быть от 1 до 30 символов. Напиши ещё раз.');
-    }
-
-    await redis('set', `state:${chatId}`, JSON.stringify({ step: 'gender', toName }), 'EX', 900);
-    return U.sendMessage(chatId, `Кого приглашаем: <b>${U.esc(toName)}</b>. Это она или он?\nОт этого зависят окончания в текстах.`, {
-        reply_markup: {
-            inline_keyboard: [[
-                { text: '👩 Она', callback_data: 'g:f' },
-                { text: '👨 Он', callback_data: 'g:m' },
-            ]],
-        },
-    });
-}
-
-async function onStart(msg) {
-    const first = (msg.from && msg.from.first_name) || 'друг';
-    return U.sendMessage(msg.chat.id, `Привет, ${U.esc(first)}! 👋\n\n${HELP}`);
-}
-
-async function onNew(chatId) {
-    const ok = await U.rateLimit(`new:${chatId}`, 20, 86400);
-    if (!ok) return U.sendMessage(chatId, 'Сегодня создано слишком много приглашений. Попробуй завтра.');
-
-    await redis('set', `state:${chatId}`, JSON.stringify({ step: 'name' }), 'EX', 900);
-    return U.sendMessage(chatId, 'Как зовут того, кого хочешь пригласить? Напиши имя.');
-}
-
-async function onMyName(chatId, arg) {
-    const name = arg.replace(/\s+/g, ' ');
+  // Команда /myname Имя
+  if (text.startsWith('/myname')) {
+    const parts = text.split(' ');
+    const name = parts.slice(1).join(' ').trim();
     if (!name || name.length > 30) {
-        return U.sendMessage(chatId, 'Напиши так: /myname Асан (до 30 символов)');
+      await sendTelegramMessage(chatId, '❌ Укажи корректное имя (до 30 символов). Пример: <code>/myname Асан</code>');
+      return;
     }
-    await redis('set', `profile:${chatId}`, name);
-    return U.sendMessage(chatId, `Теперь в приглашениях ты подписан как <b>${U.esc(name)}</b>. Старые ссылки не меняются.`);
-}
+    await redisCommand(['SET', `sender:name:${chatId}`, name]);
+    await sendTelegramMessage(chatId, `✅ Твое имя успешно сохранено как: <b>${name}</b>`);
+    return;
+  }
 
-async function onMy(chatId) {
-    const uids = (await redis('smembers', `sender:${chatId}`)) || [];
-    if (!uids.length) return U.sendMessage(chatId, 'Приглашений пока нет. Создай первое: /new');
+  if (!senderName) {
+    senderName = msg.from.first_name || 'Отправитель';
+    await redisCommand(['SET', `sender:name:${chatId}`, senderName]);
+  }
 
-    const items = [];
-    for (const uid of uids) {
-        const inv = await U.getInvite(uid);
-        if (inv) items.push({ uid, inv });
+  // Команды /start и /help
+  if (text === '/start' || text === '/help') {
+    const helpText = 
+      `👋 Привет, <b>${senderName}</b>!\n\n` +
+      `Я бот для создания красивых приглашений погулять.\n\n` +
+      `<b>Команды:</b>\n` +
+      `• <code>/new</code> — создать новое приглашение\n` +
+      `• <code>/my</code> — список твоих приглашений\n` +
+      `• <code>/myname Имя</code> — изменить твое имя\n` +
+      `• <code>/cancel</code> — отменить текущее действие\n\n` +
+      `Каждое приглашение уникально, а получатель сможет выбрать дату, время и место!`;
+    await sendTelegramMessage(chatId, helpText);
+    return;
+  }
+
+  // Команда /cancel
+  if (text === '/cancel') {
+    await redisCommand(['DEL', `state:${chatId}`]);
+    await sendTelegramMessage(chatId, '🚫 Текущее действие отменено.');
+    return;
+  }
+
+  // Команда /my
+  if (text === '/my') {
+    const inviteUids = await redisCommand(['SMEMBERS', `sender:${chatId}`]);
+    if (!inviteUids || inviteUids.length === 0) {
+      await sendTelegramMessage(chatId, '📭 У тебя пока нет созданных приглашений. Нажми <code>/new</code>, чтобы создать.');
+      return;
     }
-    items.sort((a, b) => b.inv.createdAt - a.inv.createdAt);
 
-    const site = siteUrl();
-    const lines = items.slice(0, 10).map(({ uid, inv }) => {
-        let status = '⏳ ждёт';
-        if (inv.answer) status = `✅ ${U.g(inv.gender, 'ответила', 'ответил')}`;
-        else if (inv.openedAt) status = `👀 ${U.g(inv.gender, 'открыла', 'открыл')}`;
-        return `<b>${U.esc(inv.toName)}</b> — ${status}\n${site}/?uid=${uid}`;
+    // Загружаем данные по всем приглашениям через pipeline
+    const pipelineCmds = inviteUids.map(uid => ['HGETALL', `invite:${uid}`]);
+    const results = await redisPipeline(pipelineCmds);
+
+    const invites = [];
+    results.forEach((resItem, idx) => {
+      if (resItem.result) {
+        // Ответ HGETALL в Upstash REST приходит в виде массива [key1, val1, key2, val2...] или объекта
+        const arr = resItem.result;
+        const obj = {};
+        for (let i = 0; i < arr.length; i += 2) {
+          obj[arr[i]] = arr[i + 1];
+        }
+        obj.uid = inviteUids[idx];
+        invites.push(obj);
+      }
     });
-    return U.sendMessage(chatId, lines.join('\n\n'));
+
+    // Сортируем по дате создания (новые сверху) и берем последние 10
+    invites.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+    const last10 = invites.slice(0, 10);
+
+    let msgText = `📋 <b>Твои последние приглашения:</b>\n\n`;
+    last10.forEach((inv, index) => {
+      let status = '⏳ Ждёт ответа';
+      if (inv.answer) {
+        status = '✅ Ответил(а)';
+      } else if (Number(inv.openedAt) > 0) {
+        status = '👁 Открыто';
+      }
+
+      const siteUrl = process.env.SITE_URL || 'https://your-app.vercel.app';
+      const link = `${siteUrl}/?uid=${inv.uid}`;
+      msgText += `${index + 1}. Кому: <b>${inv.toName}</b> (${inv.gender === 'female' ? 'Она' : 'Он'})\n`;
+      msgText += `   Статус: ${status}\n`;
+      msgText += `   🔗 <a href="${link}">Открыть ссылку</a>\n\n`;
+    });
+
+    await sendTelegramMessage(chatId, msgText);
+    return;
+  }
+
+  // Команда /new
+  if (text === '/new') {
+    // Проверка лимита: не больше 20 приглашений в сутки
+    const todayStr = getLocalDateString(new Date(), getTzOffset());
+    const limitKey = `limit:chat:${chatId}:${todayStr}`;
+    const countStr = await redisCommand(['GET', limitKey]);
+    const count = countStr ? parseInt(countStr, 10) : 0;
+
+    if (count >= 20) {
+      await sendTelegramMessage(chatId, '⚠️ Превышен лимит: не больше 20 приглашений в сутки.');
+      return;
+    }
+
+    // Сохраняем состояние диалога: ожидаем имя получателя
+    await redisCommand(['SET', `state:${chatId}`, JSON.stringify({ step: 'waiting_to_name' }), 'EX', 900]);
+    await sendTelegramMessage(chatId, '✍️ Введи имя получателя (от 1 до 30 символов):');
+    return;
+  }
+
+  // Обработка ввода в рамках диалога (состояние в Redis)
+  const stateStr = await redisCommand(['GET', `state:${chatId}`]);
+  if (stateStr) {
+    let state;
+    try { state = JSON.parse(stateStr); } catch (e) { state = {}; }
+
+    if (state.step === 'waiting_to_name') {
+      const toName = text.trim();
+      if (!toName || toName.length > 30) {
+        await sendTelegramMessage(chatId, '❌ Имя должно быть от 1 до 30 символов. Попробуй еще раз или напиши /cancel.');
+        return;
+      }
+
+      // Переходим к выбору пола (inline-кнопки)
+      await redisCommand(['SET', `state:${chatId}`, JSON.stringify({ step: 'waiting_gender', toName }), 'EX', 900]);
+      
+      const keyboard = {
+        inline_keyboard: [
+          [
+            { text: '👩 Она', callback_data: 'gender:female' },
+            { text: '👨 Он', callback_data: 'gender:male' }
+          ]
+        ]
+      };
+
+      await sendTelegramMessage(chatId, `👤 Получатель: <b>${toName}</b>\nТеперь выбери пол получателя:`, keyboard);
+      return;
+    }
+  }
 }
 
-async function onCallback(cq) {
-    const chatId = cq.message && cq.message.chat && cq.message.chat.id;
-    const data = cq.data || '';
-    if (!chatId || !/^g:[fm]$/.test(data)) {
-        return U.tg('answerCallbackQuery', { callback_query_id: cq.id });
-    }
+async function handleCallbackQuery(query) {
+  const chatId = query.message.chat.id;
+  const data = query.data;
 
-    const raw = await redis('get', `state:${chatId}`);
-    const state = raw ? JSON.parse(raw) : null;
-    if (!state || state.step !== 'gender') {
-        return U.tg('answerCallbackQuery', {
-            callback_query_id: cq.id,
-            text: 'Это приглашение уже создано или отменено. Начни заново: /new',
-            show_alert: true,
-        });
-    }
+  const stateStr = await redisCommand(['GET', `state:${chatId}`]);
+  if (!stateStr) {
+    await sendTelegramMessage(chatId, '⏱ Время сессии истекло. Начни заново с помощью /new.');
+    return;
+  }
 
-    const gender = data === 'g:m' ? 'm' : 'f';
-    const profile = await redis('get', `profile:${chatId}`);
-    const fromName = profile || (cq.from && cq.from.first_name) || 'Друг';
+  let state;
+  try { state = JSON.parse(stateStr); } catch (e) { state = {}; }
 
-    const uid = U.makeUid();
-    const invite = {
-        chatId,
-        fromName,
-        toName: state.toName,
-        gender,
-        createdAt: Date.now(),
-        openedAt: null,
-        noClicks: 0,
-        notes: 0,
-        answer: null,
-    };
+  if (state.step === 'waiting_gender' && data.startsWith('gender:')) {
+    const gender = data.split(':')[1];
+    const toName = state.toName;
+    const senderName = await redisCommand(['GET', `sender:name:${chatId}`]) || 'Отправитель';
 
-    await pipeline([
-        ['set', `invite:${uid}`, JSON.stringify(invite), 'EX', U.INVITE_TTL],
-        ['sadd', 'invites', uid],
-        ['sadd', `sender:${chatId}`, uid],
-        ['del', `state:${chatId}`],
-    ]);
-    await U.track('created', { uid, invite });
+    // Создаем UID (10 случайных символов)
+    const uid = crypto.randomBytes(5).toString('hex');
+    const createdAt = Date.now();
 
-    await U.tg('answerCallbackQuery', { callback_query_id: cq.id });
-    try {
-        await U.tg('editMessageReplyMarkup', {
-            chat_id: chatId,
-            message_id: cq.message.message_id,
-            reply_markup: { inline_keyboard: [] },
-        });
-    } catch (e) { /* кнопки уже убраны — не страшно */ }
+    // Записываем приглашение в Redis (TTL 180 дней = 15552000 секунд)
+    const inviteKey = `invite:${uid}`;
+    const pipelineCmds = [
+      ['HSET', inviteKey, 
+        'chatId', chatId, 
+        'fromName', senderName, 
+        'toName', toName, 
+        'gender', gender, 
+        'createdAt', createdAt, 
+        'openedAt', 0, 
+        'noClicks', 0, 
+        'notes', JSON.stringify([]), 
+        'answer', ''
+      ],
+      ['EXPIRE', inviteKey, 15552000],
+      ['SADD', 'invites', uid],
+      ['SADD', `sender:${chatId}`, uid],
+      ['DEL', `state:${chatId}`]
+    ];
 
-    const link = `${siteUrl()}/?uid=${uid}`;
-    return U.sendMessage(
-        chatId,
-        `Готово! Ссылка для <b>${U.esc(state.toName)}</b>:\n\n${link}\n\n` +
-        `Отправь её сам. Когда ${U.g(gender, 'она откроет и ответит', 'он откроет и ответит')}, я напишу сюда.`
+    // Увеличиваем дневной лимит
+    const todayStr = getLocalDateString(new Date(), getTzOffset());
+    const limitKey = `limit:chat:${chatId}:${todayStr}`;
+    pipelineCmds.push(['INCR', limitKey]);
+    pipelineCmds.push(['EXPIRE', limitKey, 86400]);
+
+    // Инкрементируем статистику created
+    pipelineCmds.push(['HINCRBY', 'stats:total', 'created', 1]);
+    pipelineCmds.push(['HINCRBY', `stats:day:${todayStr}`, 'created', 1]);
+    pipelineCmds.push(['LPUSH', 'events', JSON.stringify({ type: 'created', uid, chatId, at: createdAt })]);
+
+    await redisPipeline(pipelineCmds);
+
+    const siteUrl = process.env.SITE_URL || 'https://your-app.vercel.app';
+    const link = `${siteUrl}/?uid=${uid}`;
+
+    await sendTelegramMessage(chatId, 
+      `🎉 <b>Приглашение успешно создано!</b>\n\n` +
+      `Кому: <b>${toName}</b> (${gender === 'female' ? 'Она' : 'Он'})\n` +
+      `🔗 Ссылка для отправки:\n<code>${link}</code>`
     );
+  }
 }
-
-function siteUrl() {
-    const site = (process.env.SITE_URL || '').replace(/\/+$/, '');
-    if (!site) throw new Error('SITE_URL не задан');
-    return site;
-}
-

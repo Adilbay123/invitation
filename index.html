@@ -1,243 +1,107 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-<<<<<<< HEAD
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Особое приглашение 💌</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Приглашение погулять</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-screen" id="app">
 
-        <!-- Кнопка музыки -->
-        <button class="music-btn" id="musicBtn" aria-label="Включить музыку">🔇</button>
+  <div class="phone-container">
+    <button class="music-toggle" id="musicToggle" title="Музыка">🔇</button>
 
-        <!-- ЭКРАН 1: Заставка -->
-        <div class="screen active" id="screen-splash">
-             <div class="splash-inner">
-                <div class="splash-dot"></div>
-                <h2 class="splash-sub">У тебя</h2>
-                <h1 class="splash-title">новое сообщение</h1>
-                <button class="envelope-icon" id="splashEnvelope" aria-label="Открыть сообщение">📩</button>
-                <p class="splash-hint">Нажми на конверт</p>
-=======
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Особое приглашение 💌</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="heart-cursor">
-    <div class="app-screen" id="app">
-
-        <!-- ЗВЁЗДЫ -->
-        <div class="stars-container" id="stars"></div>
-
-        <!-- ЭКРАН 1: Заставка -->
-        <div class="screen active" id="screen-splash">
-            <div style="text-align:center; color:white;">
-                <div style="font-size:28px; opacity:0.8;">✨</div>
-                <h2 style="font-weight:300; letter-spacing:2px; margin:10px 0;">У тебя</h2>
-                <h1 class="gradient-text">новое сообщение</h1>
-                <div class="envelope-icon" id="splashEnvelope">📩</div>
-                <p style="color:#b0caff; letter-spacing:1px;">Нажми на конверт</p>
-                <div style="font-size:22px; margin-top:12px;">✨</div>
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-            </div>
-        </div>
-
-        <!-- ЭКРАН 2: Конверт -->
-        <div class="screen" id="screen-envelope">
-<<<<<<< HEAD
-            <div class="envelope-wrap">
-                <div class="envelope-3d" id="envelope3d" role="button" tabindex="0" aria-label="Открыть конверт">
-                    <span class="for-you">Для тебя</span>
-                    <span class="seal">✦</span>
-                </div>
-            </div>
-            <p class="splash-hint">нажми, чтобы открыть</p>
-=======
-            <div style="color:white; margin-bottom:18px; font-size:22px;">📩</div>
-            <div class="envelope-3d" id="envelope3d">
-                <span class="for-you">Для тебя </span>
-                <span class="seal">✦</span>
-            </div>
-            <p style="color:#b8d0ff; margin-top:12px;">нажми на конверт, чтобы открыть</p>
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-        </div>
-
-        <!-- ЭКРАН 3: Письмо -->
-        <div class="screen" id="screen-letter">
-<<<<<<< HEAD
-            <div class="letter-paper">
-                <div class="letter-greeting" id="letterGreeting">😊 Привет</div>
-                <div class="letter-text">Есть предложение...</div>
-                <div class="letter-question">Пойдём погуляем?</div>
-=======
-            <div class="letter-paper" id="letterPaper">
-                <div style="font-size:24px;">😊 Привет</div>
-                <div>Есть предложение...</div>
-                <div style="font-weight:600; margin:6px 0;">Пойдём погуляем?</div>
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-                <div class="date-block">📅 Когда тебе удобно?</div>
-                <div class="btn-group">
-                    <button class="btn-yes" id="btnYes">❤️ Да, конечно</button>
-                    <div class="no-button-area">
-                        <button class="btn-no" id="btnNo">😄 Нет</button>
-                    </div>
-                </div>
-<<<<<<< HEAD
-                <div id="noMessage" class="no-message" aria-live="polite"></div>
-=======
-                <div id="noMessage" style="text-align:center; margin-top:8px; font-size:18px; color:#ff6b8a; min-height:28px;"></div>
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-            </div>
-        </div>
-
-        <!-- ЭКРАН 4: Дата и время -->
-        <div class="screen" id="screen-datetime">
-<<<<<<< HEAD
-            <div class="screen-head">
-                <div class="emoji-big">🎉</div>
-                <h2 class="screen-title">Отлично!</h2>
-                <p class="screen-sub">Теперь выберем план</p>
-            </div>
-            <div class="card-select">
-                <div class="card-row">
-                    <span>📅 Дата встречи</span>
-                    <span class="pill" id="selectedDateDisplay">—</span>
-                </div>
-                <div class="datetime-grid">
-                    <input type="date" id="datePicker" aria-label="Дата">
-                    <input type="time" id="timePicker" value="18:30" step="300" aria-label="Время">
-=======
-            <div style="color:white; text-align:center;">
-                <div style="font-size:40px;">🎉</div>
-                <h2 style="font-weight:400; margin:6px 0;">Отлично! 🎉</h2>
-                <p style="color:#b0ccff;">Теперь выберем план</p>
-            </div>
-            <div class="card-select">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span>📅 Дата встречи</span>
-                    <span style="background:#3f5bb0; padding:4px 14px; border-radius:30px; font-size:14px;" id="selectedDateDisplay">10 июля 2026</span>
-                </div>
-                <div class="datetime-grid">
-                    <input type="date" id="datePicker" value="2026-07-10" min="2026-07-10" max="2027-12-31">
-                    <input type="time" id="timePicker" value="18:30" step="300">
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-                </div>
-                <button id="nextToPlaces" class="btn-primary">Выбрать место →</button>
-            </div>
-        </div>
-
-        <!-- ЭКРАН 5: Места -->
-        <div class="screen" id="screen-places">
-<<<<<<< HEAD
-            <h3 class="screen-title-sm">📍 Выбери место</h3>
-            <div id="placesContainer" class="places-container"></div>
-=======
-            <h3 style="color:white; font-weight:400; letter-spacing:1px;">📍 Выбери место</h3>
-            <div id="placesContainer" class="places-container"></div>
-            <div class="add-place-btn" id="addPlaceBtn">➕ Предложить своё место</div>
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-            <button id="finalizeBtn" class="btn-success">Готово! 🎉</button>
-        </div>
-
-        <!-- ЭКРАН 6: Финал -->
-        <div class="screen" id="screen-final">
-<<<<<<< HEAD
-            <div class="final-inner">
-                <div class="emoji-big">🎉</div>
-                <h1 class="final-title">Готово!</h1>
-                <div class="final-card">
-                    <p>📅 <span id="finalDate">—</span></p>
-                    <p>🕒 <span id="finalTime">—</span></p>
-                    <p>📍 <span id="finalPlace">—</span></p>
-                </div>
-                <div class="countdown" id="countdown"></div>
-
-                <p class="send-status" id="sendStatus" aria-live="polite"></p>
-                <button id="retryBtn" class="btn-ghost" hidden>↻ Повторить отправку</button>
-
-                <div class="note-block">
-                    <label for="noteInput" class="note-label">💬 Записка для <span id="noteToName">отправителя</span></label>
-                    <textarea id="noteInput" class="note-input" maxlength="200" placeholder="Напиши что-нибудь тёплое..."></textarea>
-                    <button id="noteBtn" class="btn-primary note-btn" disabled>Отправить записку</button>
-                </div>
-
-                <div class="final-actions">
-                    <button id="shareBtn" class="btn-ghost">📤 Поделиться</button>
-                    <button id="resetBtn" class="btn-ghost" hidden>↻ Заново</button>
-                </div>
-                <div class="final-hearts">
-                    <span>❤️</span><span>💛</span><span>💙</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- ЭКРАН: Ошибка -->
-        <div class="screen" id="screen-error">
-            <div class="final-inner">
-                <div class="emoji-big">🔒</div>
-                <h1 class="final-title" id="errTitle">Ссылка не работает</h1>
-                <p class="screen-sub" id="errText">Попроси отправителя создать новую.</p>
-            </div>
-        </div>
-
-        <!-- TOAST -->
-        <div class="toast-box" id="toastBox"></div>
-
-=======
-            <div style="text-align:center; color:white;">
-                <div style="font-size:48px;">🎉</div>
-                <h1 style="font-size:32px; margin:4px 0;">Готово!</h1>
-                <div class="final-card">
-                    <p>📅 <span id="finalDate">10 июля</span></p>
-                    <p>🕒 <span id="finalTime">18:30</span></p>
-                    <p>📍 <span id="finalPlace">Кафе</span></p>
-                    <div id="finalPhotoContainer" class="final-photo"></div>
-                </div>
-                <p style="font-size:24px; margin:12px 0;">До встречи 😊</p>
-                <div class="final-hearts">❤️💛💙</div>
-                <button id="resetBtn" class="btn-reset">↻ Начать заново</button>
-            </div>
-        </div>
-
-        <!-- МОДАЛКА: добавить место -->
-        <div class="modal-overlay" id="modalPlace">
-            <div class="modal-box">
-                <h3 style="margin-bottom:8px;">➕ Своё место</h3>
-                <input type="text" id="placeName" placeholder="Название места">
-                <input type="text" id="placeDesc" placeholder="Описание">
-                
-                <!-- ВЫБОР ФОТО ИЗ ГАЛЕРЕИ -->
-                <div class="photo-upload">
-                    <label for="placePhotoInput" class="photo-label">
-                        📸 Выбрать фото из галереи
-                    </label>
-                    <input type="file" id="placePhotoInput" accept="image/*" style="display:none;">
-                    <div id="photoPreview" class="photo-preview" style="display:none;">
-                        <img id="photoPreviewImg" alt="Фото места">
-                        <button id="removePhotoBtn" class="btn-remove-photo">✕ Удалить фото</button>
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:10px; margin-top:12px;">
-                    <button id="savePlaceBtn" class="btn-save">Добавить</button>
-                    <button id="closeModalBtn" class="btn-cancel">Отмена</button>
-                </div>
-            </div>
-        </div>
-
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262
-        <!-- КОНФЕТТИ -->
-        <div class="confetti-box" id="confettiBox"></div>
+    <!-- Экран 1: Заставка -->
+    <div class="screen active" id="screenSplash">
+      <div class="center-content">
+        <div class="envelope-icon">💌</div>
+        <h1>У тебя новое сообщение</h1>
+        <p id="splashSubtitle">Кто-то приготовил для тебя особенное приглашение.</p>
+        <button class="btn" id="btnOpenEnvelope">Открыть</button>
+      </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Экран 2: Письмо с вопросом -->
+    <div class="screen" id="screenLetter">
+      <div class="center-content" style="justify-content: flex-start; padding-top: 20px;">
+        <h2 id="letterTitle" style="margin-top: 20px;">Привет!</h2>
+        <p id="letterText" style="font-size: 18px; margin: 30px 0;">Пойдём погуляем?</p>
+        
+        <div class="buttons-row" id="buttonsRow">
+          <button class="btn" id="btnYes" style="flex: 1;">Да! 🥰</button>
+          <button class="btn btn-danger btn-no" id="btnNo" style="flex: 1;">Нет 😢</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Экран 3: Выбор даты и времени -->
+    <div class="screen" id="screenDatetime">
+      <h2>Выбери время</h2>
+      <p>Когда тебе будет удобно встретиться?</p>
+      
+      <div class="form-group">
+        <label>Дата встречи</label>
+        <input type="date" id="inputDate">
+      </div>
+
+      <div class="form-group">
+        <label>Время</label>
+        <input type="time" id="inputTime" value="18:00">
+      </div>
+
+      <button class="btn" id="btnNextToPlaces" style="margin-top: auto;">Далее ➔</button>
+    </div>
+
+    <!-- Экран 4: Выбор места -->
+    <div class="screen" id="screenPlaces">
+      <h2>Куда пойдём?</h2>
+      <p>Выбери место из списка:</p>
+
+      <div class="places-list" id="placesList">
+        <!-- Места подгружаются динамически -->
+      </div>
+
+      <button class="btn" id="btnSendAnswer" disabled style="margin-top: auto;">Отправить ответ ✨</button>
+    </div>
+
+    <!-- Экран 5: Финал -->
+    <div class="screen" id="screenFinal">
+      <div class="center-content" style="justify-content: flex-start; padding-top: 10px;">
+        <div class="success-badge">✅ Ответ отправлен!</div>
+        <h2 id="finalTitle">Встреча согласована</h2>
+        
+        <div class="countdown-box" id="countdownBox">
+          <div class="countdown-item"><span id="cdDays">0</span><label>дней</label></div>
+          <div class="countdown-item"><span id="cdHours">0</span><label>часов</label></div>
+          <div class="countdown-item"><span id="cdMins">0</span><label>минут</label></div>
+          <div class="countdown-item"><span id="cdSecs">0</span><label>секунд</label></div>
+        </div>
+
+        <div id="finalPlanInfo" style="text-align: left; width: 100%; margin-bottom: 16px; font-size: 14px; background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+          <!-- Инфо о месте и времени -->
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <textarea id="inputNote" placeholder="Оставить записку отправителю (до 200 символов)..." maxlength="200" rows="2"></textarea>
+        </div>
+        <button class="btn btn-secondary" id="btnSendNote" style="padding: 10px; font-size: 14px; margin-bottom: 10px;">Отправить записку 📝</button>
+
+        <button class="btn btn-secondary" id="btnSharePlan" style="padding: 10px; font-size: 14px;">Поделиться планом 📤</button>
+      </div>
+    </div>
+
+    <!-- Экран 6: Ошибка / Демо -->
+    <div class="screen" id="screenError">
+      <div class="center-content">
+        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+        <h2>Ссылка не найдена</h2>
+        <p>Возможно, срок действия приглашения истёк или ссылка указана неверно.</p>
+        <button class="btn" id="btnDemoMode">Попробовать демо</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> 6f6fbc2e9717c5320e3e883f1475be4620e77262

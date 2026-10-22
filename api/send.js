@@ -1,122 +1,165 @@
-// POST /api/send
-//   {uid, type: 'answer', date, time, placeId}  — ответ на приглашение (один раз)
-//   {uid, type: 'note', note}                   — записка (до 3 штук, после ответа)
-// Сообщение уходит тому, кто создал это приглашение (chatId берётся из Redis).
-
-const { redis } = require('./_redis');
-const U = require('./_util');
-
-const MAX_NOTES = 3;
+// api/send.js
+const { redisCommand, redisPipeline } = require('./_redis');
+const { sendTelegramMessage, escapeHtml, getLocalDateString, getTzOffset } = require('./_util');
 
 module.exports = async (req, res) => {
-    if (req.method !== 'POST') {
-        return U.json(res, 405, { ok: false, error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  let body;
+  try {
+    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  } catch (e) {
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+
+  const { uid, type } = body;
+  if (!uid || !type) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const inviteKey = `invite:${uid}`;
+  const inviteData = await redisCommand(['HGETALL', inviteKey]);
+  if (!inviteData || inviteData.length === 0) {
+    return res.status(404).json({ error: 'Invite not found' });
+  }
+
+  const inv = {};
+  for (let i = 0; i < inviteData.length; i += 2) {
+    inv[inviteData[i]] = inviteData[i + 1];
+  }
+
+  const chatId = inv.chatId;
+  const gender = inv.gender;
+  const toName = inv.toName;
+  const todayStr = getLocalDateString(new Date(), getTzOffset());
+
+  // Обработка ответа на свидание
+  if (type === 'answer') {
+    const { date, time, placeId } = body;
+    if (!date || !time || !placeId) {
+      return res.status(400).json({ error: 'Missing date, time or placeId' });
     }
 
-    try {
-        const body = U.readBody(req);
-        const uid = String(body.uid || '');
-
-        if (!(await U.rateLimit(`send:${uid}`, 20, 3600)) ||
-            !(await U.rateLimit(`sendip:${U.clientIp(req)}`, 60, 3600))) {
-            return U.json(res, 429, { ok: false, error: 'Слишком много запросов. Попробуй позже.' });
-        }
-
-        const inv = await U.getInvite(uid);
-        if (!inv) return U.json(res, 404, { ok: false, error: 'Ссылка истекла или недействительна' });
-
-        if (body.type === 'answer') return await sendAnswer(res, uid, inv, body);
-        if (body.type === 'note') return await sendNote(res, uid, inv, body);
-        return U.json(res, 400, { ok: false, error: 'Неизвестный тип запроса' });
-    } catch (err) {
-        console.error('send error:', err);
-        return U.json(res, 500, { ok: false, error: 'Ошибка сервера' });
-    }
-};
-
-async function sendAnswer(res, uid, inv, body) {
-    const date = String(body.date || '');
-    const time = String(body.time || '');
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date + 'T12:00:00Z'))) {
-        return U.json(res, 400, { ok: false, error: 'Некорректная дата' });
-    }
-    if (date < U.localDay(-1)) {
-        return U.json(res, 400, { ok: false, error: 'Дата уже прошла' });
-    }
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
-        return U.json(res, 400, { ok: false, error: 'Некорректное время' });
+    // Проверка, что дата не в прошлом
+    const selectedDate = new Date(`${date}T${time}:00`);
+    if (isNaN(selectedDate.getTime()) || selectedDate.getTime() < Date.now() - 300000) {
+      return res.status(400).json({ error: 'Date cannot be in the past' });
     }
 
-    // Название места берём на сервере, а не из запроса
-    const place = (await U.getPlaces()).find((p) => p.id === body.placeId && p.active !== false);
-    if (!place) return U.json(res, 400, { ok: false, error: 'Это место больше недоступно' });
-
-    // Отвечать можно один раз
-    const lock = await redis('set', `answered:${uid}`, '1', 'NX', 'EX', U.INVITE_TTL);
-    if (!lock) return U.json(res, 409, { ok: false, error: 'Ответ уже отправлен' });
-
-    const placeLine = `${place.emoji ? place.emoji + ' ' : ''}${place.name}`;
-    let text =
-        `💌 <b>${U.esc(inv.toName)} ${U.g(inv.gender, 'ответила', 'ответил')} на приглашение</b>\n\n` +
-        `${U.g(inv.gender, 'Согласна', 'Согласен')}! 😊\n\n` +
-        `📅 ${U.esc(U.formatDateRu(date))}\n` +
-        `🕒 ${U.esc(time)}\n` +
-        `📍 ${U.esc(placeLine)}` + (place.address ? `\n🗺 ${U.esc(place.address)}` : '');
-
-    if (inv.noClicks > 0) {
-        const n = inv.noClicks;
-        const word = n % 10 >= 2 && n % 10 <= 4 && (n < 12 || n > 14) ? 'раза' : 'раз';
-        text += `\n\n😄 Кнопку «Нет» ${U.g(inv.gender, 'пыталась', 'пытался')} нажать ${n} ${word}`;
+    // Проверяем существование и активность места
+    let placesRaw = await redisCommand(['GET', 'places']);
+    let places = [];
+    if (placesRaw) {
+      try { places = JSON.parse(placesRaw); } catch (e) { places = []; }
     }
-    text += `\n\n<i>До встречи!</i>`;
-
-    try {
-        await U.sendMessage(inv.chatId, text);
-    } catch (err) {
-        await redis('del', `answered:${uid}`); // даём возможность повторить
-        console.error('send answer failed:', err.message);
-        return U.json(res, 502, { ok: false, error: 'Не удалось отправить уведомление' });
+    if (!places || places.length === 0) {
+      places = [
+        { id: 'p1', name: 'Кафе', emoji: '☕', desc: 'Уютное местечко с десертами', address: 'ул. Ленина, 10', active: true },
+        { id: 'p2', name: 'Парк', emoji: '🌳', desc: 'Прогулка на свежем воздухе', address: 'Центральный вход', active: true },
+        { id: 'p3', name: 'Кино', emoji: '🎬', desc: 'Свежий блокбастер на большом экране', address: 'ТРЦ Мега, 3 этаж', active: true }
+      ];
     }
 
-    inv.answer = {
-        date, time,
-        placeId: place.id,
-        placeName: place.name,
-        placeEmoji: place.emoji || '',
-        placeAddress: place.address || '',
-        at: Date.now(),
+    const placeObj = places.find(p => p.id === placeId && p.active !== false);
+    if (!placeObj) {
+      return res.status(400).json({ error: 'Invalid or inactive place selected' });
+    }
+
+    // Проверяем, что ответ принимается один раз (SET NX через поле answer)
+    if (inv.answer && inv.answer !== '') {
+      return res.status(409).json({ error: 'Answer already submitted' });
+    }
+
+    const answerData = {
+      date,
+      time,
+      placeName: `${placeObj.emoji} ${placeObj.name}`,
+      placeAddress: placeObj.address,
+      submittedAt: Date.now()
     };
-    await U.saveInvite(uid, inv);
-    await U.track('answer', { uid, invite: inv, placeId: place.id });
 
-    return U.json(res, 200, { ok: true });
-}
+    // Сохраняем ответ в Redis
+    await redisCommand(['HSET', inviteKey, 'answer', JSON.stringify(answerData)]);
 
-async function sendNote(res, uid, inv, body) {
-    if (!inv.answer) {
-        return U.json(res, 400, { ok: false, error: 'Сначала нужно ответить на приглашение' });
-    }
-    if ((inv.notes || 0) >= MAX_NOTES) {
-        return U.json(res, 409, { ok: false, error: `Можно отправить не больше ${MAX_NOTES} записок` });
-    }
+    // Статистика мест и общая
+    const placeStatKey = `stats:places`;
+    await redisPipeline([
+      ['HINCRBY', placeStatKey, placeObj.name, 1],
+      ['HINCRBY', 'stats:total', 'answer', 1],
+      ['HINCRBY', `stats:day:${todayStr}`, 'answer', 1],
+      ['LPUSH', 'events', JSON.stringify({ type: 'answer', uid, at: Date.now() })]
+    ]);
 
-    const note = String(body.note || '').trim().slice(0, 200);
-    if (!note) return U.json(res, 400, { ok: false, error: 'Записка пустая' });
+    // Текстовые окончания в зависимости от пола
+    const isFemale = gender === 'female';
+    const otvetilaStr = isFemale ? 'ответила' : 'ответил';
+    const soglasnaStr = isFemale ? 'Согласна' : 'Согласен';
+
+    const noClicksCount = inv.noClicks || 0;
+
+    const telegramText = 
+      `🎉 <b>${escapeHtml(toName)}</b> ${otvetilaStr} на приглашение!\n\n` +
+      `✨ ${soglasnaStr}!\n` +
+      `📅 Дата: <b>${date}</b>\n` +
+      `⏰ Время: <b>${time}</b>\n` +
+      `📍 Место: <b>${escapeHtml(placeObj.emoji)} ${escapeHtml(placeObj.name)}</b>\n` +
+      `📌 Адрес: <code>${escapeHtml(placeObj.address)}</code>\n` +
+      `🚫 Нажатий «Нет»: <b>${noClicksCount}</b>`;
 
     try {
-        await U.sendMessage(
-            inv.chatId,
-            `💬 <b>Записка от ${U.esc(inv.toName)}</b>\n\n<i>${U.esc(note)}</i>`
-        );
-    } catch (err) {
-        console.error('send note failed:', err.message);
-        return U.json(res, 502, { ok: false, error: 'Не удалось отправить записку' });
+      await sendTelegramMessage(chatId, telegramText);
+    } catch (e) {
+      console.error('Failed to send telegram notification:', e);
     }
 
-    inv.notes = (inv.notes || 0) + 1;
-    await U.saveInvite(uid, inv);
-    await U.track('note', { uid, invite: inv });
+    return res.status(200).json({ ok: true, answer: answerData });
+  }
 
-    return U.json(res, 200, { ok: true, notes: inv.notes });
-}
+  // Обработка отправки записки
+  if (type === 'note') {
+    const { note } = body;
+    if (!note || typeof note !== 'string') {
+      return res.status(400).json({ error: 'Missing note text' });
+    }
+
+    if (note.length > 200) {
+      return res.status(400).json({ error: 'Note is too long (max 200 characters)' });
+    }
+
+    if (!inv.answer || inv.answer === '') {
+      return res.status(400).json({ error: 'Cannot send note before answering' });
+    }
+
+    let notesArr = [];
+    try { notesArr = JSON.parse(inv.notes || '[]'); } catch (e) { notesArr = []; }
+
+    if (notesArr.length >= 3) {
+      return res.status(400).json({ error: 'Maximum 3 notes allowed' });
+    }
+
+    const cleanNote = escapeHtml(note.trim());
+    notesArr.push({ text: cleanNote, at: Date.now() });
+
+    await redisCommand(['HSET', inviteKey, 'notes', JSON.stringify(notesArr)]);
+    await redisPipeline([
+      ['HINCRBY', 'stats:total', 'note', 1],
+      ['HINCRBY', `stats:day:${todayStr}`, 'note', 1],
+      ['LPUSH', 'events', JSON.stringify({ type: 'note', uid, at: Date.now() })]
+    ]);
+
+    const isFemale = gender === 'female';
+    const telegramText = `📝 Новая записка от <b>${escapeHtml(toName)}</b> (${isFemale ? 'Она' : 'Он'}):\n\n<i>${cleanNote}</i>`;
+    try {
+      await sendTelegramMessage(chatId, telegramText);
+    } catch (e) {
+      console.error('Failed to send telegram note notification:', e);
+    }
+
+    return res.status(200).json({ ok: true, notes: notesArr });
+  }
+
+  return res.status(400).json({ error: 'Unknown request type' });
+};

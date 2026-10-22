@@ -1,12 +1,10 @@
 {
-  "name": "invitation",
-  "version": "2.0.0",
-  "private": true,
-  "description": "Романтичное приглашение с ответом в Telegram, админкой и статистикой",
-  "scripts": {
-    "dev": "vercel dev"
-  },
+  "name": "invitation-app",
+  "version": "1.0.0",
+  "description": "Приглашение погулять с деплоем на Vercel и интеграцией с Upstash Redis",
   "engines": {
     "node": ">=18"
-  }
+  },
+  "dependencies": {},
+  "devDependencies": {}
 }

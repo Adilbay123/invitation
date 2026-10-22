@@ -1,169 +1,154 @@
-// API админ-панели. Защита: заголовок x-admin-password == ADMIN_PASSWORD.
-//   GET  /api/admin?action=overview      — статистика, приглашения, события, места
-//   POST /api/admin?action=save_places   — {places: [...]} сохранить список мест
-//   POST /api/admin?action=delete_invite — {uid}
-
-const crypto = require('crypto');
-const { redis, pipeline } = require('./_redis');
-const U = require('./_util');
-
-function passwordOk(req) {
-    const expected = process.env.ADMIN_PASSWORD || '';
-    const given = String(req.headers['x-admin-password'] || '');
-    const a = crypto.createHash('sha256').update(given).digest();
-    const b = crypto.createHash('sha256').update(expected).digest();
-    return crypto.timingSafeEqual(a, b);
-}
+// api/admin.js
+const { redisCommand, redisPipeline } = require('./_redis');
+const { timingSafeEqualStr, getLocalDateString, getTzOffset } = require('./_util');
 
 module.exports = async (req, res) => {
-    if (!process.env.ADMIN_PASSWORD) {
-        return U.json(res, 503, { ok: false, error: 'ADMIN_PASSWORD не задан в переменных окружения' });
+  // 1. Проверка пароля администратора через заголовок x-admin-password
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const headerPassword = req.headers['x-admin-password'];
+
+  if (!adminPassword || !timingSafeEqualStr(headerPassword, adminPassword)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const action = req.query.action || 'stats';
+
+  try {
+    // ДЕЙСТВИЕ: СТАТИСТИКА
+    if (action === 'stats') {
+      const totalRaw = await redisCommand(['HGETALL', 'stats:total']);
+      const total = {};
+      if (totalRaw) {
+        for (let i = 0; i < totalRaw.length; i += 2) {
+          total[totalRaw[i]] = parseInt(totalRaw[i + 1], 10);
+        }
+      }
+
+      // Статистика за последние 14 дней
+      const tzOffset = getTzOffset();
+      const now = new Date();
+      const daysData = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 86400000);
+        const dayStr = getLocalDateString(d, tzOffset);
+        const dayStatsRaw = await redisCommand(['HGETALL', `stats:day:${dayStr}`]);
+        const dayObj = { date: dayStr, created: 0, open: 0, no: 0, answer: 0, note: 0 };
+        if (dayStatsRaw) {
+          for (let j = 0; j < dayStatsRaw.length; j += 2) {
+            dayObj[dayStatsRaw[j]] = parseInt(dayStatsRaw[j + 1], 10);
+          }
+        }
+        daysData.push(dayObj);
+      }
+
+      // Популярные места
+      const placesStatsRaw = await redisCommand(['HGETALL', 'stats:places']);
+      const placesStats = {};
+      if (placesStatsRaw) {
+        for (let i = 0; i < placesStatsRaw.length; i += 2) {
+          placesStats[placesStatsRaw[i]] = parseInt(placesStatsRaw[i + 1], 10);
+        }
+      }
+
+      // Лента последних 100 событий
+      const eventsRaw = await redisCommand(['LRANGE', 'events', 0, 99]);
+      const events = (eventsRaw || []).map(e => {
+        try { return JSON.parse(e); } catch (err) { return { raw: e }; }
+      });
+
+      return res.status(200).json({ total, daysData, placesStats, events });
     }
 
-    try {
-        // Защита от перебора: 10 неудачных попыток за 15 минут с одного IP
-        const failKey = `admfail:${U.clientIp(req)}`;
-        const fails = Number((await redis('get', failKey)) || 0);
-        if (fails >= 10) {
-            return U.json(res, 429, { ok: false, error: 'Слишком много попыток. Подожди 15 минут.' });
+    // ДЕЙСТВИЕ: ПРИГЛАШЕНИЯ
+    if (action === 'invites') {
+      if (req.method === 'GET') {
+        const uids = await redisCommand(['SMEMBERS', 'invites']);
+        if (!uids || uids.length === 0) return res.status(200).json({ invites: [] });
+
+        const pipelineCmds = uids.map(uid => ['HGETALL', `invite:${uid}`]);
+        const results = await redisPipeline(pipelineCmds);
+
+        const invites = [];
+        results.forEach((resItem, idx) => {
+          if (resItem.result) {
+            const arr = resItem.result;
+            const obj = {};
+            for (let i = 0; i < arr.length; i += 2) {
+              obj[arr[i]] = arr[i + 1];
+            }
+            obj.uid = uids[idx];
+            try { obj.notes = JSON.parse(obj.notes || '[]'); } catch (e) { obj.notes = []; }
+            try { obj.answer = obj.answer ? JSON.parse(obj.answer) : null; } catch (e) { obj.answer = null; }
+            invites.push(obj);
+          }
+        });
+
+        invites.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+        return res.status(200).json({ invites });
+      }
+
+      if (req.method === 'DELETE') {
+        const uid = req.query.uid;
+        if (!uid) return res.status(400).json({ error: 'Missing uid' });
+
+        const chatId = await redisCommand(['HGET', `invite:${uid}`, 'chatId']);
+        const pipelineCmds = [
+          ['DEL', `invite:${uid}`],
+          ['SREM', 'invites', uid]
+        ];
+        if (chatId) {
+          pipelineCmds.push(['SREM', `sender:${chatId}`, uid]);
         }
-        if (!passwordOk(req)) {
-            const n = await redis('incr', failKey);
-            if (n === 1) await redis('expire', failKey, 900);
-            return U.json(res, 401, { ok: false, error: 'Неверный пароль' });
+        await redisPipeline(pipelineCmds);
+        return res.status(200).json({ ok: true });
+      }
+    }
+
+    // ДЕЙСТВИЕ: МЕСТА
+    if (action === 'places') {
+      if (req.method === 'GET') {
+        let placesRaw = await redisCommand(['GET', 'places']);
+        let places = [];
+        if (placesRaw) {
+          try { places = JSON.parse(placesRaw); } catch (e) { places = []; }
+        }
+        if (!places || places.length === 0) {
+          places = [
+            { id: 'p1', name: 'Кафе', emoji: '☕', desc: 'Уютное местечко с десертами', address: 'ул. Ленина, 10', active: true, order: 1 },
+            { id: 'p2', name: 'Парк', emoji: '🌳', desc: 'Прогулка на свежем воздухе', address: 'Центральный вход', active: true, order: 2 },
+            { id: 'p3', name: 'Кино', emoji: '🎬', desc: 'Свежий блокбастер на большом экране', address: 'ТРЦ Мега, 3 этаж', active: true, order: 3 }
+          ];
+        }
+        return res.status(200).json({ places });
+      }
+
+      if (req.method === 'POST') {
+        let body;
+        try {
+          body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        } catch (e) {
+          return res.status(400).json({ error: 'Invalid JSON' });
         }
 
-        const action = String(req.query.action || 'overview');
-        if (req.method === 'GET' && action === 'overview') return await overview(res);
-        if (req.method === 'POST' && action === 'save_places') return await savePlaces(req, res);
-        if (req.method === 'POST' && action === 'delete_invite') return await deleteInvite(req, res);
-        return U.json(res, 400, { ok: false, error: 'Неизвестное действие' });
-    } catch (err) {
-        console.error('admin error:', err);
-        return U.json(res, 500, { ok: false, error: 'Ошибка сервера' });
+        const { places } = body;
+        if (!Array.isArray(places)) {
+          return res.status(400).json({ error: 'Places must be an array' });
+        }
+
+        // Проверяем, что остаётся хотя бы одно активное место
+        const activeCount = places.filter(p => p.active !== false).length;
+        if (activeCount < 1) {
+          return res.status(400).json({ error: 'At least one active place must remain' });
+        }
+
+        await redisCommand(['SET', 'places', JSON.stringify(places)]);
+        return res.status(200).json({ ok: true, places });
+      }
     }
+
+    return res.status(400).json({ error: 'Unknown action' });
+  } catch (err) {
+    console.error('Admin API error:', err);
+    return res.status(500).json({ error: err.message });
+  }
 };
-
-// HGETALL возвращает плоский массив [k, v, k, v] → объект с числами
-function toObj(arr) {
-    const out = {};
-    for (let i = 0; i < (arr || []).length; i += 2) out[arr[i]] = Number(arr[i + 1]);
-    return out;
-}
-
-async function overview(res) {
-    const dayKeys = [];
-    for (let i = 13; i >= 0; i--) dayKeys.push(U.localDay(-i));
-
-    const [totalRaw, placeStatsRaw, uidsRaw, eventsRaw, ...dayRaw] = await pipeline([
-        ['hgetall', 'stats:total'],
-        ['hgetall', 'stats:places'],
-        ['smembers', 'invites'],
-        ['lrange', 'events', 0, 29],
-        ...dayKeys.map((d) => ['hgetall', `stats:day:${d}`]),
-    ]);
-
-    const totals = toObj(totalRaw);
-    const days = dayKeys.map((day, i) => ({ day, ...toObj(dayRaw[i]) }));
-
-    // Приглашения (ограничиваем 1000 штук)
-    const uids = (uidsRaw || []).slice(0, 1000);
-    let invites = [];
-    if (uids.length) {
-        const raws = await pipeline(uids.map((uid) => ['get', `invite:${uid}`]));
-        const dead = [];
-        raws.forEach((raw, i) => {
-            if (!raw) return dead.push(uids[i]);
-            try {
-                const inv = JSON.parse(raw);
-                invites.push({
-                    uid: uids[i],
-                    fromName: inv.fromName,
-                    toName: inv.toName,
-                    gender: inv.gender,
-                    createdAt: inv.createdAt,
-                    openedAt: inv.openedAt,
-                    noClicks: inv.noClicks || 0,
-                    notes: inv.notes || 0,
-                    answer: inv.answer || null,
-                });
-            } catch (e) { /* битая запись — пропускаем */ }
-        });
-        if (dead.length) {
-            redis('srem', 'invites', ...dead).catch(() => {}); // убираем истёкшие из индекса
-        }
-        invites.sort((a, b) => b.createdAt - a.createdAt);
-    }
-
-    const places = await U.getPlaces();
-    const placeStats = Object.entries(toObj(placeStatsRaw))
-        .map(([id, count]) => {
-            const p = places.find((x) => x.id === id);
-            return { id, name: p ? p.name : id, emoji: p ? p.emoji : '', removed: !p, count };
-        })
-        .sort((a, b) => b.count - a.count);
-
-    const events = (eventsRaw || []).map((r) => {
-        try { return JSON.parse(r); } catch (e) { return null; }
-    }).filter(Boolean);
-
-    return U.json(res, 200, {
-        ok: true,
-        totals: {
-            created: totals.created || 0,
-            open: totals.open || 0,
-            no: totals.no || 0,
-            answer: totals.answer || 0,
-            note: totals.note || 0,
-        },
-        days, placeStats, invites, events, places,
-    });
-}
-
-async function savePlaces(req, res) {
-    const input = U.readBody(req).places;
-    if (!Array.isArray(input) || input.length > 50) {
-        return U.json(res, 400, { ok: false, error: 'Нужен список мест (не больше 50)' });
-    }
-
-    const seen = new Set();
-    const places = [];
-    for (const p of input) {
-        const name = String((p && p.name) || '').trim().slice(0, 40);
-        if (!name) return U.json(res, 400, { ok: false, error: 'У каждого места должно быть название' });
-
-        let id = String((p && p.id) || '');
-        if (!/^[a-z0-9_]{1,24}$/.test(id) || seen.has(id)) id = 'p' + crypto.randomBytes(4).toString('hex');
-        seen.add(id);
-
-        places.push({
-            id,
-            emoji: String(p.emoji || '').trim().slice(0, 8),
-            name,
-            desc: String(p.desc || '').trim().slice(0, 80),
-            address: String(p.address || '').trim().slice(0, 120),
-            active: p.active !== false,
-        });
-    }
-
-    if (!places.some((p) => p.active)) {
-        return U.json(res, 400, { ok: false, error: 'Нужно оставить хотя бы одно активное место' });
-    }
-
-    await redis('set', 'places', JSON.stringify(places));
-    return U.json(res, 200, { ok: true, places });
-}
-
-async function deleteInvite(req, res) {
-    const uid = String(U.readBody(req).uid || '');
-    const inv = await U.getInvite(uid);
-    const cmds = [
-        ['del', `invite:${uid}`],
-        ['del', `opened:${uid}`],
-        ['del', `answered:${uid}`],
-        ['srem', 'invites', uid],
-    ];
-    if (inv && inv.chatId) cmds.push(['srem', `sender:${inv.chatId}`, uid]);
-    await pipeline(cmds);
-    return U.json(res, 200, { ok: true });
-}
