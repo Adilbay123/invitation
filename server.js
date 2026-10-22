@@ -4,14 +4,14 @@ const webhookHandler = require('./api/webhook.js');
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
-  // Ловим запросы именно на /api/webhook
+  // Если Telegram шлет запрос на вебхук:
   if (req.url === '/api/webhook') {
     return webhookHandler(req, res);
   }
   
-  // Для проверки работы сервера в браузере
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Bot server is running!');
+  // Главная страница (то, что вы сейчас видите в браузере)
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ message: "❤️ API для историй любви", status: "running" }));
 });
 
 server.listen(PORT, () => {
